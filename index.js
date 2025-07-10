@@ -7,7 +7,8 @@ app.use(express.static('public'));
 var token = 
 [
   {
-    "name:" : null,
+    "user:": null,
+    "browser": null
   }
 ]
 
