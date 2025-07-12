@@ -29,18 +29,12 @@ export async function putToken(token) {
 
 //Reads JSON file on the server, returns a JS token to the client
 export async function getToken() {
-  try {
-    const res = await fetch('/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(token)
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data)) return null; // Only map if data is an array
-    return data.map(item => new tokenState(item.user, item.browser));
-  } catch (err) {
-    console.error("getToken error:", err);
-    return null;
+  const response = await fetch('/token', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch token');
   }
+  return await response.json();
 }
