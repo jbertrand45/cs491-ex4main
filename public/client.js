@@ -55,6 +55,7 @@ pingBtn.onclick = async () => {
     if (!serverToken) return;
 
     if (serverToken.user !== token.user || serverToken.browser !== token.browser) {
+      alert("It's your turn");
       console.log("It's your turn");
       pingBtn.disabled = false;
       clearInterval(poll);
@@ -62,24 +63,6 @@ pingBtn.onclick = async () => {
   }, 1000);
 };
 
-/*  //ask for name of user and sets the token
-  if (!token) {
-    const name = prompt("Enter your name:");
-    if (!name) {
-      alert("Name is required to ping.");
-      pingBtn.disabled = false;
-      return;
-    }
-    //error handling for setToken
-    token = await setToken(name);
-    if (!token) {
-      alert("Failed to create token.");
-      pingBtn.disabled = false;
-      return;
-    }
-
-  }
-}
-*/
+//
 
 
