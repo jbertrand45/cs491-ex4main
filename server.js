@@ -9,9 +9,41 @@ let tokens = {
   turn: ""
 }
 
+let allPlayers = [];
+
 // Middleware to handle JSON requests
 app.use(express.static('public'));
 app.use(express.json());
+
+function updateActivity(player) {
+  const p = tokens.players.find(
+    existingPlayer => existingPlayer.user === player.user && existingPlayer.browser === player.browser
+  );
+  if (p) p.lastActive = Date.now();
+}
+
+// Periodic cleanup
+setInterval(() => {
+  const now = Date.now();
+  const beforeCount = tokens.players.length;
+  tokens.players = tokens.players.filter(player => now - player.lastActive < TIMEOUT);
+  if (tokens.players.length !== beforeCount) {
+    console.log('Players removed due to timeout, resetting turn state');
+    if (tokens.players.length === 0) {
+      tokens.turn = "";
+    } else if (tokens.players.length === 1) {
+      tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+    } else {
+      // Make sure current turn player still exists
+      const turnPlayerExists = tokens.players.find(
+        p => tokens.turn && p.user === tokens.turn.user && p.browser === tokens.turn.browser
+      );
+      if (!turnPlayerExists) {
+        tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+      }
+    }
+  }
+}, 2000);
 
 /**
  * This is a simple game server that allows players to join a game,
@@ -20,15 +52,19 @@ app.use(express.json());
 app.post('/join', (req, res) => {
   const player = req.body;
   if (tokens.players.length < 2) {
+    player.lastActive = Date.now();
     tokens.players.push(player);
+    if (!allPlayers.some(p => p.user === player.user && p.browser === player.browser)) {
+      allPlayers.push({ ...player });
+    }
     if (tokens.players.length === 1) {
-      tokens.turn = player.user; // Set the first player as the turn initiator
+      tokens.turn = { user: player.user, browser: player.browser };
     }
     console.log('Player joined:', player);
-    res.status(200).json({message: "Joined", players: tokens.players});
+    res.status(200).json({ message: "Joined", players: tokens.players });
   }
   else {
-    return res.status(403).json({message: "Room full"});
+    return res.status(403).json({ message: "Room full" });
   }
 })
 
@@ -42,15 +78,26 @@ app.post('/leave', (req, res) => {
     const sameBrowser = existingPlayer.browser === player.browser;
     return !(sameUser && sameBrowser);
   })
+  allPlayers = allPlayers.filter(existingPlayer => {
+    const sameUser = existingPlayer.user === player.user;
+    const sameBrowser = existingPlayer.browser === player.browser;
+    return !(sameUser && sameBrowser);
+  });
+  if (tokens.players.length === 0) {
+    tokens.turn = "";
+  } else if (tokens.players.length === 1) {
+    tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+  } else {
+    // Make sure current turn player still exists
+    const turnPlayerExists = tokens.players.find(
+      p => tokens.turn && p.user === tokens.turn.user && p.browser === tokens.turn.browser
+    );
+    if (!turnPlayerExists) {
+      tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+    }
+  }
   console.log('Player left:', player);
-  res.status(200).json({message: "Left", players: tokens.players});
-})
-
-/** 
- * Returns the current state of the game, including players and their tokens.
- */
-app.get('/tokens', (req, res) => {
-  res.status(200).json({ players: tokens.players });
+  res.status(200).json({ message: "Left", players: tokens.players });
 })
 
 /**
@@ -59,28 +106,66 @@ app.get('/tokens', (req, res) => {
  */
 app.post('/token', (req, res) => {
   const player = req.body;
-  // Find if player exists
+  // Update player's info
   const idx = tokens.players.findIndex(
     p => p.user === player.user && p.browser === player.browser
   );
   if (idx !== -1) {
-    tokens.players[idx] = { ...tokens.players[idx], ...player };
+    tokens.players[idx] = { ...tokens.players[idx], ...player, lastActive: Date.now() };
   } else {
-    tokens.players.push(player);
+    // Player not found in active players, don't allow ping
+    return res.status(404).send("Player not in active game");
+  }
+  // Advance turn to the other player
+  if (tokens.players.length === 2) {
+    const other = tokens.players.find(
+      p => p.user !== player.user && p.browser !== player.browser
+    );
+    if (other) {
+      tokens.turn = { user: other.user, browser: other.browser };
+    }
   }
   console.log('token successfully stored', tokens.players);
   res.status(200).send("received token");
-})
-
+});
 
 /**
  * Returns the token state of the current player.
  */
 app.get('/token', (req, res) => {
-  if (tokens.players.length === 0) {
-    return res.status(404).send("token not created");
+  if (!tokens.turn) {
+    return res.status(404).send("No turn set");
   }
-  res.json({ players: tokens.players });
+  const turnPlayer = tokens.players.find(
+    p => p.user === tokens.turn.user && p.browser === tokens.turn.browser
+  );
+  if (!turnPlayer) {
+    console.log('Turn player not found, resetting turn state');
+    // Reset turn state if turn player doesn't exist
+    if (tokens.players.length > 0) {
+      tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+      return res.json(tokens.players[0]);
+    } else {
+      tokens.turn = "";
+      return res.status(404).send("No active players");
+    }
+  }
+  res.json(turnPlayer);
+})
+
+/**
+ * Updates the last active time of a player.
+ */
+app.post('/activity', (req, res) => {
+  updateActivity(req.body);
+  res.status(200).send("activity updated");
+});
+
+/** 
+ * Returns the current state of the game, including players and their tokens.
+ */
+app.get('/tokens', (req, res) => {
+  res.status(200).json({ players: allPlayers });
 })
 
 /**
