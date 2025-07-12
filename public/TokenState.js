@@ -3,6 +3,7 @@ export class tokenState {
   constructor(user, browser) {
     this.user = user;
     this.browser = browser;
+    this.lastActive = Date.now(); // Track last active time
   }
 }
 
@@ -14,7 +15,7 @@ export function setToken(name) {
   else if (a.indexOf("Chrome") > 0) var agent = "Chrome";
   else if (a.indexOf("Safari") > 0) var agent = "Safari";
 
-  return new tokenState(name, agent);
+  return new tokenState(name, agent, Date.now());
 }
 
 //writes a token from Client to Server
