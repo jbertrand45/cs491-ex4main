@@ -10,19 +10,19 @@ export class tokenState {
 export function setToken(name) {
   const a = navigator.userAgent; // browser name string
   var agent = "Firefox"; // the default, ff order is important
-  if (a.indexOf("Safari") > 0) var agent = "Safari";
+  if (a.indexOf("OPR") > 0) var agent = "Opera";
   else if (a.indexOf("Chrome") > 0) var agent = "Chrome";
-  else if (a.indexOf("OPR") > 0) var agent = "Opera";
+  else if (a.indexOf("Safari") > 0) var agent = "Safari";
 
   return new tokenState(name, agent);
 }
 
 //writes a token from Client to Server
 export async function putToken(token) {
-  const action = await fetch('/join',{
-    method : 'POST',
-    headers : {'Content-Type': 'application/json'},
-    body : JSON.stringify(token)
+  const action = await fetch('/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token)
   });
   return action.ok;
 }
@@ -30,7 +30,11 @@ export async function putToken(token) {
 //Reads JSON file on the server, returns a JS token to the client
 export async function getToken() {
   try {
-    const res = await fetch('/players');
+    const res = await fetch('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(token)
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (!Array.isArray(data)) return null; // Only map if data is an array
