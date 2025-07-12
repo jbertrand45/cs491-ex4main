@@ -5,7 +5,7 @@ const port = 3000;
 
 let tokens = {
   players: [],
-  turn: ""
+  currentTurn: 0
 }
 
 app.use(express.static('public'));
@@ -35,8 +35,11 @@ app.post('/leave', (req, res) => {
   res.status(200).json({message: "Left", players: tokens.players});
 })
 
-app.get('/players', (req, res) => {
-  res.status(200).json({ players: tokens.players });
+app.get('/players', (req,res) => {
+  res.json({
+    players: tokens.players,
+    turn: tokens.turn
+  })
 })
 
 // save token from /token
