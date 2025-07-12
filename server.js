@@ -20,7 +20,6 @@ app.post('/join', (req, res) => {
     res.status(200).json({message: "Joined", players: tokens.players});
   }
   else {
-    alert("Room full");
     return res.status(403).json({message: "Room full"});
   }
 })
@@ -40,20 +39,20 @@ app.get('/players', (req, res) => {
   res.status(200).json({ players: tokens.players });
 })
 
-// // save token from /token
-// app.post('/token', (req, res) => {
-//   tokens.players = req.body;
-//   console.log('token successfully stored', tokens.players);
-//   res.status(200).send("received token");
-// })
+// save token from /token
+app.post('/token', (req, res) => {
+  tokens.players = req.body;
+  console.log('token successfully stored', tokens.players);
+  res.status(200).send("received token");
+})
 
-// // get token from /token
-// app.get('/token', (req, res) => {
-//   if (tokens.players.length === 0) {
-//     return res.status(404).send("token not created");
-//   }
-//   res.json(tokens.players);
-// })
+// get token from /token
+app.get('/token', (req, res) => {
+  if (tokens.players.length === 0) {
+    return res.status(404).send("token not created");
+  }
+  res.json(tokens.players);
+})
 
 app.listen(port, () => {
   console.log(`app listening on port ${port}`);
