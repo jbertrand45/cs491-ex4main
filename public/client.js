@@ -54,7 +54,7 @@ pingBtn.onclick = async () => {
     const serverToken = await getToken();
     if (!serverToken) return;
 
-    if (serverToken.user !== token.user || serverToken.browser !== token.browser) {
+    if (serverToken.user === token.user && serverToken.browser === token.browser) {
       alert("It's your turn");
       console.log("It's your turn");
       pingBtn.disabled = false;
@@ -62,6 +62,29 @@ pingBtn.onclick = async () => {
     }
   }, 1000);
 };
+
+function sendActivity() {
+  if (token) {
+    fetch('/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(token)
+    });
+  }
+}
+
+// Notify server when tab closes
+window.addEventListener('beforeunload', () => {
+  if (!token) return;
+  fetch('/leave', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token)
+  });
+});
+
+// Periodically send activity
+setInterval(sendActivity, 3000);
 
 //
 
