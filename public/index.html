@@ -1,21 +1,26 @@
 <!-- Main Page-->
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <!-- Page Title-->
-        <title> PING </title>
-        <link rel="stylesheet" href="style.css">
-    </head>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Page Title-->
+    <title>PING</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-    <body>
-        <!--button name-->
-        <h1> PING BUTTON </h1>
-        <!--button id name to be called in client.js-->
+  <body>
+    <!--button name-->
+    <div class="flex-cont">
+      <div class="title-box">
+        <h1>Ping Pong</h1>
+      </div>
+      <!--button id name to be called in client.js-->
+      <div class="sel">
         <button id="joinButton">Join</button>
         <button id="pingButton">Ping</button>
-        <!--loads index.js-->
-        <script type=module src="client.js"></script>
-
-    </body>
+      </div>
+    </div>
+    <!--loads client.js-->
+    <script type="module" src="client.js"></script>
+  </body>
 </html>

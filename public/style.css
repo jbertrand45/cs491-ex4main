@@ -1,1 +1,28 @@
 /*style for PING*/
+.flex-cont {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex-wrap: wrap;
+    padding: 1em;
+}
+
+.title-box {
+  border: 2px solid rgb(96 139 168);
+  border-radius: 5px;
+  background-color: rgb(96 139 168 / 0.2);
+  padding: 0.5em 1em;
+  margin-bottom: 1em;
+  display: inline-block;
+}
+
+.flex-cont > * {
+  border: 2px solid rgb(96 139 168);
+  border-radius: 5px;
+  background-color: rgb(96 139 168 / 0.2);
+}
+
+.flex-cont .sel hr{
+    width:100%;
+}
