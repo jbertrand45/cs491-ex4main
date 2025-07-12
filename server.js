@@ -5,7 +5,7 @@ const port = 3000;
 
 let tokens = {
   players: [],
-  turn: null
+  turn: ""
 }
 
 app.use(express.static('public'));
@@ -20,6 +20,7 @@ app.post('/join', (req, res) => {
     res.status(200).json({message: "Joined", players: tokens.players});
   }
   else {
+    alert("Room full");
     return res.status(403).json({message: "Room full"});
   }
 })
@@ -35,8 +36,8 @@ app.post('/leave', (req, res) => {
   res.status(200).json({message: "Left", players: tokens.players});
 })
 
-app.get('/players', (req,res) => {
-  
+app.get('/players', (req, res) => {
+  res.status(200).json({ players: tokens.players });
 })
 
 // // save token from /token
