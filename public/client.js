@@ -1,21 +1,30 @@
 import { tokenState, setToken, putToken, getToken } from './TokenState.js';
 
+//initializing the variable to hold the user's token
 const pingBtn = document.getElementById('pingButton');
 pingBtn.disabled = true;
 const joinBtn = document.getElementById('joinButton');
 let token = null;
 
+//join button on click for user
 joinBtn.onclick = async () => {
   if (joinBtn.innerText[0] === 'J') {
+    //join logic for the user
     const name = prompt("Enter your name to join:");
+    //if user cancels the prompt, name equals null
     if (!name) return alert("Name required.");
+    //creates token with a username
     token = setToken(name);
+    //sends token to the server to join the ping game
     const res = await fetch('/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(token)
     })
+    //parses the json response on the server
     const data = await res.json();
+
+    //if response is ok, server accepts the user
     if (!res.ok) {
       alert(data.message || "Room Full");
       return;
@@ -25,12 +34,14 @@ joinBtn.onclick = async () => {
     pingBtn.disabled = false;
   }
   else {
+    //sends a network request to server to exit the game
     const res = await fetch('/leave', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(token)
     });
 
+    //goes back to initial state
     token = null;
     pingBtn.disabled = true;
     joinBtn.innerText = 'Join';
@@ -54,6 +65,7 @@ pingBtn.onclick = async () => {
     const serverToken = await getToken();
     if (!serverToken) return;
 
+    //checks if the token matches the other player's token and outputs it's your turn notification
     if (serverToken.user === token.user && serverToken.browser === token.browser) {
       alert("It's your turn");
       console.log("It's your turn");
@@ -62,7 +74,7 @@ pingBtn.onclick = async () => {
     }
   }, 1000);
 };
-
+//function for sending client a heartbeat data to the server
 function sendActivity() {
   if (token) {
     fetch('/activity', {

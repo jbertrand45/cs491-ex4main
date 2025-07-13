@@ -7,7 +7,7 @@
     flex-wrap: wrap;
     padding: 1em;
 }
-
+/*box style*/
 .title-box {
   border: 2px solid rgb(96 139 168);
   border-radius: 5px;
@@ -16,13 +16,13 @@
   margin-bottom: 1em;
   display: inline-block;
 }
-
+/*style for flex box*/
 .flex-cont > * {
   border: 2px solid rgb(96 139 168);
   border-radius: 5px;
   background-color: rgb(96 139 168 / 0.2);
 }
-
+/*width for flex box*/
 .flex-cont .sel hr{
     width:100%;
 }

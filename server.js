@@ -1,9 +1,12 @@
+//imports express and sets up the server
 const express = require('express');
 
+//initializes express app and sets the port
 const app = express();
 const port = 3000;
 const TIMEOUT = 10 * 1000; //10s
 
+//function that sets a token for player
 let tokens = {
   players: [],
   turn: ""
