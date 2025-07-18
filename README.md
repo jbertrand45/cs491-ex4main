@@ -1,4 +1,4 @@
-# CS491 Exercise 4 - Pilot
+# CS491 Exercise 4 - Main
 
 A demo can be found here: https://ayayrom.buzz/
 
