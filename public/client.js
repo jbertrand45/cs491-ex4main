@@ -23,6 +23,7 @@ const winPos = [
 ];
 
 // import { tokenState, setToken, putToken, getToken } from './TokenState.js';
+/*import { tokenState, setToken, putToken, getToken } from './TokenState.js';
 
 // //initializing the variable to hold the user's token
 // const pingBtn = document.getElementById('pingButton');
@@ -119,5 +120,85 @@ const winPos = [
 //   });
 // });
 
-// // Periodically send activity
-// setInterval(sendActivity, 3000);
+// Periodically send activity
+setInterval(sendActivity, 3000);
+
+//
+*/
+
+const boardEl = document.getElementById("board");
+const actionBtn = document.getElementById("actionButton");
+
+let gameState = null;
+
+// Rendering game board
+function renderBoard() {
+  boardEl.innerHTML = ""; 
+
+  for (let row = 0; row < 4; row++) {
+    const tr = document.createElement("tr");
+
+    for (let col = 0; col < 4; col++) {
+      const i = row * 4 + col;
+      const td = document.createElement("td");
+
+      td.textContent = gameState.board[i];
+      td.id = `cell-${i}`;
+      td.className = "cell";
+      td.onclick = () => handleCellClick(i);
+
+      if (gameState.winningStripe?.includes(i)) {
+        td.style.color = "red";
+      }
+
+      tr.appendChild(td);
+    }
+
+    boardEl.appendChild(tr);
+  }
+}
+// Handles box cell clicks on the board
+async function handleCellClick(index) {
+  if (!gameState.started || gameState.board[index] !== "" || gameState.winner) return;
+  const res = await fetch("/move", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ index })
+  });
+  const newState = await res.json();
+  gameState = newState;
+  renderBoard();
+  updateButton();
+}
+
+// Action button to handle flip, clear, and start tasks
+actionBtn.onclick = async () => {
+  let route = "";
+  if (!gameState.coinFlipped) route = "flip";
+  else if (gameState.winner || gameState.board.some(c => c)) route = "clear";
+  else route = "start";
+
+  const res = await fetch("/" + route, { method: "POST" });
+  const newState = await res.json();
+  gameState = newState;
+  renderBoard();
+  updateButton();
+};
+
+// Updates the action button based on the state of the game
+function updateButton() {
+  if (!gameState.coinFlipped) actionBtn.innerText = "Flip";
+  else if (gameState.winner || gameState.board.some(c => c)) actionBtn.innerText = "Clear";
+  else actionBtn.innerText = "Start";
+}
+
+// Loading intial state of the game from the server
+async function loadState() {
+  const res = await fetch("/state");
+  gameState = await res.json();
+  renderBoard();
+  updateButton();
+}
+
+loadState();
+
