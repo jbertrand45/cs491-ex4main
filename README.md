@@ -1,6 +1,6 @@
 # CS491 Exercise 4 - Main
 
-A demo can be found here: https://ayayrom.buzz/
+A demo can be found here: not done yet
 
 This was done by Aaron Ba (ayayrom) and Joey Bertrand (jbertrand45)
 
