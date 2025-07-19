@@ -1,11 +1,10 @@
-<!-- Main Page-->
- <!--This file was made my Aaron Ba and Joey Bertrand for CS 491-->
+<!--This file was made by Aaron Ba and Joey Bertrand for CS 491-->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <!-- Page Title-->
-    <title>PING</title>
+    <title>Tic Tac Four</title>
     <link rel="stylesheet" href="style.css" />
   </head>
 
@@ -13,13 +12,14 @@
     <!--button name-->
     <div class="flex-cont">
       <div class="title-box">
-        <h1>Ping Pong</h1>
+        <h1>Tic Tac Four</h1>
       </div>
       <!--button id name to be called in client.js-->
-      <div class="sel">
-        <button id="joinButton">Join</button>
-        <button id="pingButton">Ping</button>
-      </div>
+      <div id="grid"></div>
+      <button id="joinBtn">Join</button>
+      <button id="startBtn">Start</button>
+      <button id="forfeitBtn">Forfeit</button>
+      <button id="flipBtn">Flip</button>
     </div>
     <!--loads client.js-->
     <script type="module" src="client.js"></script>
