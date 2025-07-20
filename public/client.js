@@ -1,8 +1,17 @@
+import { applyButtonFormat, applyTextFormat, showTooltip, hideTooltip } from './format.js';
+import { createCellButton } from './button.js';
+import { tokenState, setToken, putToken, getToken } from './TokenState.js';
+
 const grid = document.getElementById('grid');
 const joinBtn = document.getElementById('joinBtn');
 const startBtn = document.getElementById('startBtn');
 const forfeitBtn = document.getElementById('forfeitBtn');
 const flipBtn = document.getElementById('flipBtn');
+
+startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
+
+let turn = null; // Track whose turn it is
+let token = null; // Player's token
 
 const winPos = [
   // Horizontal
@@ -21,6 +30,68 @@ const winPos = [
   [0, 5, 10, 15],
   [3, 6, 9, 12]
 ];
+
+renderBoard();
+
+// Rendering game board
+function renderBoard() {
+  grid.innerHTML = ''; // Clear existing buttons
+
+  // Button creation made dynamic
+  for (let i = 0; i < 16; i++) {
+    const button = createCellButton(i, turn);
+    grid.appendChild(button);
+  }
+}
+
+
+
+
+// // Handles box cell clicks on the board
+// async function handleCellClick(index) {
+//   if (!gameState.started || gameState.board[index] !== "" || gameState.winner) return;
+//   const res = await fetch("/move", {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ index })
+//   });
+//   const newState = await res.json();
+//   gameState = newState;
+//   renderBoard();
+//   updateButton();
+// }
+
+// // Action button to handle flip, clear, and start tasks
+// actionBtn.onclick = async () => {
+//   let route = "";
+//   if (!gameState.coinFlipped) route = "flip";
+//   else if (gameState.winner || gameState.board.some(c => c)) route = "clear";
+//   else route = "start";
+
+//   //post request to a dynamic route
+//   const res = await fetch("/" + route, { method: "POST" });
+//   const newState = await res.json();
+//   gameState = newState;
+//   renderBoard();
+//   updateButton();
+// };
+
+// // Updates the action button based on the state of the game
+// function updateButton() {
+//   if (!gameState.coinFlipped) actionBtn.innerText = "Flip";
+//   else if (gameState.winner || gameState.board.some(c => c)) actionBtn.innerText = "Clear";
+//   else actionBtn.innerText = "Start";
+// }
+
+// // Loading intial state of the game from the server
+// async function loadState() {
+//   const res = await fetch("/state");
+//   gameState = await res.json();
+//   renderBoard();
+//   updateButton();
+// }
+
+// loadState();
 
 // import { tokenState, setToken, putToken, getToken } from './TokenState.js';
 /*import { tokenState, setToken, putToken, getToken } from './TokenState.js';
@@ -126,98 +197,7 @@ setInterval(sendActivity, 3000);
 //
 */
 
-const boardEl = document.getElementById("board");
-const actionBtn = document.getElementById("actionButton");
+// const boardEl = document.getElementById("board");
+// const actionBtn = document.getElementById("actionButton");
 
-let gameState = null;
-
-renderBoard();
-
-// BORROWED CODE FROM PREV EXERCISE
-function applyFormat(tooltip) {
-  tooltip.innerText = "x";
-  tooltip.style.position = "absolute";
-  tooltip.style.paddingLeft = "10px";
-  tooltip.style.lineHeight = "0px";
-  tooltip.style.marginTop = "-3px";
-  tooltip.style.marginLeft = "0px";
-  tooltip.style.color = "black";
-  tooltip.style.fontSize = "45px";
-  tooltip.style.visibility = "hidden"; // hide by default
-  tooltip.style.whiteSpace = "nowrap";
-  tooltip.style.userSelect = "none";
-}
-
-// Rendering game board
-function renderBoard() {
-  for (let i = 0; i < 16; i++) {
-    const button = document.createElement("button");
-    button.className = "cell";
-    button.id = 'tic' + i;
-    //STYLE
-    button.id = "tic" + i;
-    button.style.width = "60px";
-    button.style.height = "60px";
-    button.style.fontFamily = "sans-serif";
-    button.style.fontSize = "30px";
-    button.disabled = true;
-
-    const tooltip = document.createElement("span");
-    applyFormat(tooltip);
-    button.appendChild(tooltip);
-
-    button.onclick = () => {
-      handleCellClick(i);
-    };
-    
-    grid.appendChild(button);
-  }
-}
-
-
-// // Handles box cell clicks on the board
-// async function handleCellClick(index) {
-//   if (!gameState.started || gameState.board[index] !== "" || gameState.winner) return;
-//   const res = await fetch("/move", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ index })
-//   });
-//   const newState = await res.json();
-//   gameState = newState;
-//   renderBoard();
-//   updateButton();
-// }
-
-// // Action button to handle flip, clear, and start tasks
-// actionBtn.onclick = async () => {
-//   let route = "";
-//   if (!gameState.coinFlipped) route = "flip";
-//   else if (gameState.winner || gameState.board.some(c => c)) route = "clear";
-//   else route = "start";
-
-//   //post request to a dynamic route
-//   const res = await fetch("/" + route, { method: "POST" });
-//   const newState = await res.json();
-//   gameState = newState;
-//   renderBoard();
-//   updateButton();
-// };
-
-// // Updates the action button based on the state of the game
-// function updateButton() {
-//   if (!gameState.coinFlipped) actionBtn.innerText = "Flip";
-//   else if (gameState.winner || gameState.board.some(c => c)) actionBtn.innerText = "Clear";
-//   else actionBtn.innerText = "Start";
-// }
-
-// // Loading intial state of the game from the server
-// async function loadState() {
-//   const res = await fetch("/state");
-//   gameState = await res.json();
-//   renderBoard();
-//   updateButton();
-// }
-
-// loadState();
-
+// let gameState = null;
