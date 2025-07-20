@@ -1,21 +1,22 @@
 //TokenState class 
 export class tokenState {
-  constructor(user, browser) {
+  constructor(user, browser, board, turn) {
     this.user = user;
     this.browser = browser;
-    this.lastActive = Date.now(); // Track last active time
+    this.board = board;
+    this.turn = turn;
+    //this.lastActive = Date.now(); // Track last active time
   }
 }
 
 //creates a JS object
-export function setToken(name) {
+export function setToken(user, board, turn) {
   const a = navigator.userAgent; // browser name string
   var agent = "Firefox"; // the default, ff order is important
   if (a.indexOf("OPR") > 0) var agent = "Opera";
   else if (a.indexOf("Chrome") > 0) var agent = "Chrome";
   else if (a.indexOf("Safari") > 0) var agent = "Safari";
-
-  return new tokenState(name, agent, Date.now());
+  return new tokenState(user, agent, board, turn);
 }
 
 //writes a token from Client to Server
