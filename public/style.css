@@ -1,3 +1,49 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: white;
+  color: gray;
+  margin: 0;
+  padding: 0;
+
+}
+
+h1 {
+  margin-top: 20px;
+}
+
+#board {
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+/*board styles, font size and color*/
+#board td {
+  width: 60px;
+  height: 60px;
+  font-size: 2rem;
+  text-align: center;
+  vertical-align: middle;
+  border: 2px solid #000;
+  cursor: pointer;
+}
+
+/*button styles and colors*/
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 2px solid #007BFF;
+  background-color: #e6f0ff;
+  cursor: pointer;
+}
+
+/*color changes when hovering over the button*/
+button:hover {
+  background-color: #cce0ff;
+}
+
 /*style for PING*/
 .flex-cont {
     display: flex;

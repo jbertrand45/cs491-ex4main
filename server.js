@@ -18,6 +18,9 @@ app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
+app.get('/state', (req, res) => {
+  res.json(gameState);
+});
 
 
 // //imports express and sets up the server

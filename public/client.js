@@ -178,6 +178,7 @@ actionBtn.onclick = async () => {
   else if (gameState.winner || gameState.board.some(c => c)) route = "clear";
   else route = "start";
 
+  //post request to a dynamic route
   const res = await fetch("/" + route, { method: "POST" });
   const newState = await res.json();
   gameState = newState;
