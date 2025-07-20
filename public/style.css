@@ -1,4 +1,4 @@
-body {
+/* body {
   font-family: Arial, sans-serif;
   text-align: center;
   background-color: white;
@@ -17,7 +17,7 @@ h1 {
   margin: 20px 0;
 }
 
-/*board styles, font size and color*/
+
 #board td {
   width: 60px;
   height: 60px;
@@ -28,7 +28,7 @@ h1 {
   cursor: pointer;
 }
 
-/*button styles and colors*/
+
 button {
   margin-top: 10px;
   padding: 10px 20px;
@@ -39,21 +39,21 @@ button {
   cursor: pointer;
 }
 
-/*color changes when hovering over the button*/
+
 button:hover {
   background-color: #cce0ff;
+} */
+
+/* style for PING */
+.flex-cont {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex-wrap: wrap;
+  padding: 1em;
 }
 
-/*style for PING*/
-.flex-cont {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    flex-wrap: wrap;
-    padding: 1em;
-}
-/*box style*/
 .title-box {
   border: 2px solid rgb(96 139 168);
   border-radius: 5px;
@@ -62,13 +62,19 @@ button:hover {
   margin-bottom: 1em;
   display: inline-block;
 }
-/*style for flex box*/
+
 .flex-cont > * {
   border: 2px solid rgb(96 139 168);
   border-radius: 5px;
   background-color: rgb(96 139 168 / 0.2);
 }
-/*width for flex box*/
-.flex-cont .sel hr{
-    width:100%;
+
+.flex-cont .sel hr {
+  width: 100%;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: 60px 60px 60px 60px;
+  gap: 5px;
 }
