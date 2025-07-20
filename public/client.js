@@ -1,5 +1,5 @@
-import { applyButtonFormat, applyTextFormat, showTooltip, hideTooltip } from './format.js';
-import { createCellButton } from './button.js';
+import { applyButtonFormat, applyTextFormat } from './format.js';
+import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText } from './button.js';
 import { tokenState, setToken, putToken, getToken } from './TokenState.js';
 
 const grid = document.getElementById('grid');
@@ -12,6 +12,7 @@ startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 
 let turn = null; // Track whose turn it is
 let token = null; // Player's token
+let board = Array(16).fill(null); // 4x4 board initialized to null
 
 const winPos = [
   // Horizontal
@@ -39,13 +40,23 @@ function renderBoard() {
 
   // Button creation made dynamic
   for (let i = 0; i < 16; i++) {
-    const button = createCellButton(i, turn);
+    const button = createCellButton(i, handleCellClick);
     grid.appendChild(button);
   }
 }
 
+//TODO: add token sending
+function handleCellClick(btn) {
+  const index = parseInt(btn.id.slice(-1));
+  if (board[index] === null)
+  {
+    board[index] = turn ? 'x' : 'o'; // Set the player's mark
+    turn ? changeTooltipText(btn, 'x') : changeTooltipText(btn, 'o');
+  }
+}
 
-
+//TODO: refactor to not use UI checking
+joinBtn.onclick = async () => {
 
 // // Handles box cell clicks on the board
 // async function handleCellClick(index) {
