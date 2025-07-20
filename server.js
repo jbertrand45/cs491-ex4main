@@ -5,14 +5,25 @@ const port = 3000;
 app.use(express.static('public'));
 app.use(express.json());
 
-let gameState = null;
+let gameState = {
+  players: [],
+  turn: null
+};
 
-
-
-
-
-
-
+app.post('/join', (req, res) => {
+  const player = req.body;
+  if (gameState.players.length < 2) {
+    gameState.players.push(player);
+    if (gameState.players.length === 1) {
+      gameState.turn = { user: player.user, browser: player.browser };
+    }
+    console.log('Player joined:', player);
+    res.status(200).json({ message: "Joined", players: gameState.players });
+  }
+  else {
+    return res.status(403).json({ message: "Room full" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
