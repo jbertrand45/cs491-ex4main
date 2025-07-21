@@ -9,7 +9,7 @@ class tokenState {
 
 class gameState {
   constructor(board, started, winner, turn, coinFlipped) {
-    this.board = board; 
+    this.board = board;
     this.started = started; // Boolean indicating if the game has started
     this.winner = winner; // Player who won, null if no winner
     this.turn = turn; // Player whose turn it is, null if not set
@@ -67,4 +67,18 @@ async function getToken() {
   return await response.json();
 }
 
-export { tokenState, setToken, postToken, removeToken, getToken };
+async function updateBoard(index) {
+  const req = await fetch('/move', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({index: index})
+  });
+  const res = await req.json();
+  if (!req.ok) {
+    alert("Failed to update board: " + res.message);
+    throw new Error("Failed to update board");
+  }
+  return res;
+}
+
+export { tokenState, setToken, postToken, removeToken, getToken, updateBoard };
