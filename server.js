@@ -12,8 +12,8 @@ let tokens = {
 let gameState = {
   turn: null,
   started: null, // null means not joined, false means not started, true means started
-  board: Array(16).fill(null), // 4x4 board initialized to null
-  winner: null // Track the winner, once winner is set, game is over
+  winner: null, // Track the winner, once winner is set, game is over
+  board: Array(16).fill(null) // 4x4 board initialized to null
 };
 
 app.post('/token', (req, res) => {
@@ -29,6 +29,9 @@ app.post('/token', (req, res) => {
   else {
     return res.status(400).json({ message: "Token already exists" });
   }
+  if (tokens.players.length === 1) {
+    gameState.turn = { user: tokens.players[0].user, agent: tokens.players[0].agent};
+  }
   console.log('token successfully stored', tokens.players);
   res.status(200).json({ message: "Joined. Players: ", players: tokens.players });
 });
@@ -42,10 +45,10 @@ app.post('/leave', (req, res) => {
   }
   );
   if (tokens.players.length === 0) {
-    tokens.turn = null;
+    gameState.turn = null;
   }
   else if (tokens.players.length === 1) {
-    tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+    gameState.turn = { user: tokens.players[0].user, agent: tokens.players[0].agent };
   }
   console.log('Player left:', player);
   res.status(200).json({ message: "Left", players: tokens.players });
@@ -53,7 +56,7 @@ app.post('/leave', (req, res) => {
 
 
 app.get('/token', (req, res) => {
-  res.json(tokens.players);
+  res.json(tokens);
 });
 
 app.get('/state', (req, res) => {
