@@ -1,12 +1,14 @@
 import { applyButtonFormat, applyTextFormat } from './format.js';
 import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText } from './button.js';
-import { setToken, postToken, getToken } from './states.js';
+import { setToken, postToken, removeToken, getToken } from './states.js';
 
 const grid = document.getElementById('grid');
 const joinBtn = document.getElementById('join-btn');
 const startBtn = document.getElementById('start-btn');
 const forfeitBtn = document.getElementById('forfeit-btn');
 const flipBtn = document.getElementById('flip-btn');
+const playerMsg = document.getElementById('player-msg');
+const winMsg = document.getElementById('win-msg');
 
 startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 
@@ -49,9 +51,11 @@ function renderBoard() {
   }
   const btnRow = document.getElementById('btn-row');
   btnRow.style.width = `${grid.offsetWidth}px`;
-  btnRow.style.gap = ((grid.offsetWidth - (60 * 4))/3) + 'px'; // Adjust gap based on grid width
-  const sidetext = document.getElementById('player-msg');
-  sidetext.style.width = `${grid.offsetWidth - 4}px`; // Adjust side text width based on grid width
+  btnRow.style.gap = ((grid.offsetWidth - (60 * 4)) / 3) + 'px'; // Adjust gap based on grid width
+
+  playerMsg.style.width = `${grid.offsetWidth - 4}px`; // Adjust side text width based on grid width
+  playerMsg.innerText = winMsg.innerText = "No game started";
+  winMsg.style.width = playerMsg.style.width; // Match win message width to player message
 }
 
 //TODO: add token sending
@@ -65,16 +69,37 @@ function handleCellClick(btn) {
 
 //TODO: refactor to not use UI checking
 joinBtn.addEventListener('click', async () => {
-  handleJoin();
+  if (joinBtn.innerText === 'Join') {
+    await handleJoin();
+  } else {
+    await handleLeave();
+  }
 });
 
 async function handleJoin() {
   let name = prompt("Enter your name to join:");
   if (!name) return alert("Name required.");
-  token = setToken(name);
-  const btntest = document.getElementById('join-btn');
-  btntest.innerHTML = 'Leave';
-  postToken(token);
+  try {
+    token = setToken(name);
+    const res = await postToken(token);
+    const names = res.players.map(p => p.user).join(", ");
+    alert(res.message + names);
+    joinBtn.innerText = 'Leave';
+  }
+  catch (error) {
+    return;
+  }
+}
+
+async function handleLeave() {
+  const res = await removeToken(token);
+  if (!res) {
+    alert("Failed to leave the game");
+    return;
+  }
+  token = null;
+  joinBtn.innerText = 'Join';
+  startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 }
 
 
