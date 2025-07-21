@@ -2,10 +2,11 @@
 .flex-cont {
   display: flex;
   align-items: center;
-  justify-content: center;
+  align-content: space-evenly;
+  justify-content: space-evenly;
   flex-direction: column;
-  flex-wrap: wrap;
-  padding: 1em;
+  flex-wrap: nowrap;
+  gap: 10px 50px;
 }
 
 .title-box {
@@ -34,7 +35,7 @@
 }
 
 .actBtn {
-  width: 57px;
+  width: 60px;
   white-space: nowrap;
   text-align: center;
   overflow: hidden;
@@ -42,7 +43,16 @@
 
 #btn-row {
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-right: -1px;
+  justify-content: space-around;
+
+  /* margin-right: -1px; */
+}
+
+.side-text {
+  padding: 5px 2px 5px 2px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  border: 2px solid rgb(96 139 168);
+  background-color: rgb(96 139 168 / 0.2);
 }
