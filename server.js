@@ -5,32 +5,63 @@ const port = 3000;
 app.use(express.static('public'));
 app.use(express.json());
 
-let gameState = {
-  players: [],
-  turn: null
+let tokens = {
+  players: [] // max is 2 players
 };
 
-app.post('/join', (req, res) => {
+let gameState = {
+  turn: null,
+  started: null, // null means not joined, false means not started, true means started
+  board: Array(16).fill(null), // 4x4 board initialized to null
+  winner: null // Track the winner, once winner is set, game is over
+};
+
+app.post('/token', (req, res) => {
   const player = req.body;
-  if (gameState.players.length < 2) {
-    gameState.players.push(player);
-    if (gameState.players.length === 1) {
-      gameState.turn = { user: player.user, browser: player.browser };
+  if ((!tokens.players.some(p => p.user === player.user && p.browser === player.browser))) {
+    if (tokens.players.length < 2) {
+      tokens.players.push(player);
+    } 
+    else {
+      return res.status(403).json({ message: "Room full" });
     }
-    console.log('Player joined:', player);
-    res.status(200).json({ message: "Joined", players: gameState.players });
   }
   else {
-    return res.status(403).json({ message: "Room full" });
+    return res.status(400).json({ message: "Token already exists" });
   }
+  console.log('token successfully stored', tokens.players);
+  res.status(200).json({ message: "Joined. Players: ", players: tokens.players });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.post('/leave', (req, res) => {
+  const player = req.body;
+  tokens.players = tokens.players.filter(existingPlayer => {
+    const sameUser = existingPlayer.user === player.user;
+    const sameBrowser = existingPlayer.browser === player.browser;
+    return !(sameUser && sameBrowser);
+  }
+  );
+  if (tokens.players.length === 0) {
+    tokens.turn = null;
+  }
+  else if (tokens.players.length === 1) {
+    tokens.turn = { user: tokens.players[0].user, browser: tokens.players[0].browser };
+  }
+  console.log('Player left:', player);
+  res.status(200).json({ message: "Left", players: tokens.players });
+});
+
+
+app.get('/token', (req, res) => {
+  res.json(tokens.players);
 });
 
 app.get('/state', (req, res) => {
   res.json(gameState);
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
 
 
@@ -200,7 +231,7 @@ app.get('/state', (req, res) => {
 //   res.status(200).send("activity updated");
 // });
 
-// /** 
+// /**
 //  * Returns the current state of the game, including players and their tokens.
 //  */
 // app.get('/tokens', (req, res) => {
