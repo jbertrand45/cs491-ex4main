@@ -59,14 +59,31 @@ function renderBoard() {
 }
 
 //TODO: add token sending
-function handleCellClick(btn) {
-  const index = parseInt(btn.id.slice(-1));
-  if (board[index] === null) {
-    board[index] = turn ? 'x' : 'o'; // Set the player's mark
-    turn ? changeTooltipText(btn, 'x') : changeTooltipText(btn, 'o');
+async function handleCellClick(btn) {
+  const index = parseInt(btn.id.replace("tic", ""));
+  if (!token || !gameState.started || gameState.board[index] !== null || gameState.winner) return;
+
+  try {
+    const res = await fetch("/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ index, token })
+    });
+
+    if (!res.ok) {
+      const errorMsg = await res.text();
+      alert("Move failed: " + errorMsg);
+      return;
+    }
+
+    const newState = await res.json();
+    gameState = newState;
+    renderBoard();
+    updateMessages();
+  } catch (err) {
+    console.error("Move error:", err);
   }
 }
-
 //TODO: refactor to not use UI checking
 joinBtn.addEventListener('click', async () => {
   if (joinBtn.innerText === 'Join') {
@@ -76,6 +93,33 @@ joinBtn.addEventListener('click', async () => {
   }
 });
 
+// Update player and win messages
+startBtn.addEventListener('click', async () => {
+  const res = await fetch('/start', { method: 'POST' });
+  gameState = await res.json();
+  renderBoard();
+});
+
+// Update messages based on game state to flip coin
+flipBtn.addEventListener('click', async () => {
+  const res = await fetch('/flip', { method: 'POST' });
+  const data = await res.json();
+  alert(data.message);
+});
+
+// Forfeit button to end the game
+forfeitBtn.addEventListener('click', async () => {
+  const res = await fetch('/forfeit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  });
+  gameState = await res.json();
+  alert(`You forfeited. Winner is ${gameState.winner}`);
+  renderBoard();
+});
+
+//join button
 async function handleJoin() {
   let name = prompt("Enter your name to join:");
   if (!name) return alert("Name required.");
