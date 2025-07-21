@@ -247,3 +247,120 @@ app.listen(port, () => {
 // app.listen(port, () => {
 //   console.log(`app listening on port ${port}`);
 // })
+
+
+//endpoint for the start of the game
+app.post('/move', (req, res) => {
+  const { index, token } = req.body;
+
+  // Token gets validated
+  const player = tokens.players.find(
+    p => p.user === token.user && p.browser === token.browser
+  );
+  if (!player) {
+    return res.status(403).send("Invalid player token.");
+  }
+
+  // After validated, gameplay starts
+  if (!gameState.started) {
+    return res.status(400).send("Game hasn't started.");
+  }
+  if (gameState.board[index] !== null) {
+    return res.status(400).send("Cell already taken.");
+  }
+  if (tokens.turn.user !== token.user || tokens.turn.browser !== token.browser) {
+    return res.status(403).send("Not your turn.");
+  }
+
+  // Move is applied
+  const mark = tokens.players[0].user === token.user ? 'X' : 'O';
+  gameState.board[index] = mark;
+
+  // Checks for game winner
+  const winPos = [
+    [0, 1, 2, 3], [4, 5, 6, 7],
+    [8, 9, 10, 11], [12, 13, 14, 15],
+    [0, 4, 8, 12], [1, 5, 9, 13],
+    [2, 6, 10, 14], [3, 7, 11, 15],
+    [0, 5, 10, 15], [3, 6, 9, 12]
+  ];
+
+  for (const [a, b, c, d] of winPos) {
+    if (
+      gameState.board[a] &&
+      gameState.board[a] === gameState.board[b] &&
+      gameState.board[b] === gameState.board[c] &&
+      gameState.board[c] === gameState.board[d]
+    ) {
+      gameState.winner = token.user;
+      return res.json(gameState);
+    }
+  }
+
+  // Turn switching
+  tokens.turn = tokens.players.find(p => p.user !== token.user);
+  gameState.turn = tokens.turn.user;
+
+  return res.json(gameState);
+});
+
+// starting game
+app.post('/start', (req, res) => {
+  if (tokens.players.length < 2) {
+    return res.status(400).json({ message: "Need 2 players to start the game." });
+  }
+
+  //first turn is randomly assigned
+  const firstTurn = tokens.players[Math.floor(Math.random() * 2)];
+  tokens.turn = firstTurn;
+
+  //initializing state of game
+  gameState = {
+    started: true,
+    board: Array(16).fill(null),
+    winner: null,
+    turn: firstTurn.user
+  };
+
+  console.log(`Game started. ${firstTurn.user} goes first.`);
+  res.status(200).json(gameState);
+});
+
+// Coin flip to decide turn
+app.post('/flip', (req, res) => {
+  if (tokens.players.length < 2) {
+    return res.status(400).json({ message: "Need 2 players to flip." });
+  }
+
+  //chosen player gets to go first, after coin flip
+  const first = tokens.players[Math.floor(Math.random() * 2)];
+  tokens.turn = first;
+  gameState.turn = first.user;
+
+  console.log(`Coin flipped. ${first.user} goes first.`);
+  res.status(200).json({ message: `${first.user} goes first!`, turn: gameState.turn });
+});
+
+// Forfeiting the game
+app.post('/forfeit', (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).send("Token required.");
+  }
+
+  //validating token
+  const otherPlayer = tokens.players.find(p => p.user !== token.user);
+  if (otherPlayer) {
+    gameState.winner = otherPlayer.user;
+  } else {
+    gameState.winner = null;
+  }
+
+  //reset the game state
+  gameState.started = false;
+  gameState.turn = null;
+
+  console.log(`${token.user} forfeited. Winner: ${gameState.winner || "None"}`);
+  res.status(200).json(gameState);
+});
