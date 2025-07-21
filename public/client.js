@@ -1,6 +1,8 @@
 import { applyButtonFormat, applyTextFormat } from './format.js';
-import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText } from './button.js';
-import { setToken, postToken, removeToken, getToken } from './states.js';
+import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid } from './button.js';
+import { setToken, postToken, removeToken, getToken, updateBoard } from './states.js';
+
+const socket = io();
 
 const grid = document.getElementById('grid');
 const joinBtn = document.getElementById('join-btn');
@@ -15,9 +17,9 @@ startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 let token = null; // token for checking player status
 let gameState = { // state to store game info
   started: null, // null means not joined, false means not started, true means started
-  board: Array(16).fill(null), // 4x4 board initialized to null
   winner: null, // Track the winner, once winner is set, game is over
-  turn: null
+  turn: null, // true is p1, false is p2
+  board: Array(16).fill(null) // 4x4 board initialized to null
 };
 
 const winPos = [
@@ -58,33 +60,40 @@ function renderBoard() {
   winMsg.style.width = playerMsg.style.width; // Match win message width to player message
 }
 
-//TODO: add token sending
-async function handleCellClick(btn) {
-  const index = parseInt(btn.id.replace("tic", ""));
-  if (!token || !gameState.started || gameState.board[index] !== null || gameState.winner) return;
+socket.on('gameState', newState => {
+  gameState = newState;
+  refreshBoard();
+});
 
-  try {
-    const res = await fetch("/move", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ index, token })
+function refreshBoard() {
+  const buttons = document.querySelectorAll('.cell');
+  if (token) {
+    enableGrid(grid);
+    buttons.forEach((btn, index) => {
+      changeTooltipText(btn, gameState.board[index] || '');
     });
-
-    if (!res.ok) {
-      const errorMsg = await res.text();
-      alert("Move failed: " + errorMsg);
-      return;
-    }
-
-    const newState = await res.json();
-    gameState = newState;
-    renderBoard();
-    updateMessages();
-  } catch (err) {
-    console.error("Move error:", err);
+  }
+  else {
+    disableGrid(grid);
+    buttons.forEach((btn, index) => {
+      changeTooltipText(btn, gameState.board[index] || '');
+    });
   }
 }
-//TODO: refactor to not use UI checking
+
+//TODO: add token sending
+async function handleCellClick(event) {
+  const btn = event.currentTarget;
+  const index = parseInt(btn.id.slice(3));
+  gameState.turn ? changeTooltipText(btn, 'x') : changeTooltipText(btn, 'o');
+  const res = await updateBoard(index);
+  gameState.board = res.board;
+  gameState.turn = res.turn;
+  disableGrid(grid);
+  // refreshBoard();
+}
+
+//TODO: not use UI checking
 joinBtn.addEventListener('click', async () => {
   if (joinBtn.innerText === 'Join') {
     await handleJoin();
@@ -93,31 +102,40 @@ joinBtn.addEventListener('click', async () => {
   }
 });
 
-// Update player and win messages
-startBtn.addEventListener('click', async () => {
-  const res = await fetch('/start', { method: 'POST' });
-  gameState = await res.json();
-  renderBoard();
-});
+// // Update player and win messages
+// startBtn.addEventListener('click', async () => {
+//   const res = await fetch('/start', { method: 'POST' });
+//   gameState = await res.json();
+//   renderBoard();
+// });
 
 // Update messages based on game state to flip coin
 flipBtn.addEventListener('click', async () => {
-  const res = await fetch('/flip', { method: 'POST' });
-  const data = await res.json();
-  alert(data.message);
-});
-
-// Forfeit button to end the game
-forfeitBtn.addEventListener('click', async () => {
-  const res = await fetch('/forfeit', {
+  const input = prompt("Enter your guess for the coin flip [H/T]:");
+  if (!input || !['H', 'T'].includes(input.toUpperCase())) {
+    return alert("Invalid input. Please enter 'H' or 'T'.");
+  }
+  const guess = input.toUpperCase();
+  const req = await fetch('/flip', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token })
+    body: JSON.stringify({ input: input })
   });
-  gameState = await res.json();
-  alert(`You forfeited. Winner is ${gameState.winner}`);
-  renderBoard();
+  const res = await req.json();
+  alert(res.message);
 });
+
+// // Forfeit button to end the game
+// forfeitBtn.addEventListener('click', async () => {
+//   const res = await fetch('/forfeit', {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ token })
+//   });
+//   gameState = await res.json();
+//   alert(`You forfeited. Winner is ${gameState.winner}`);
+//   renderBoard();
+// });
 
 //join button
 async function handleJoin() {
@@ -128,7 +146,11 @@ async function handleJoin() {
     const res = await postToken(token);
     const names = res.players.map(p => p.user).join(", ");
     alert(res.message + names);
+    gameState.turn = res.turn; // Set initial turn
     joinBtn.innerText = 'Leave';
+    if (res.players.length === 1) {
+      flipBtn.disabled = false;
+    }
   }
   catch (error) {
     return;
@@ -142,9 +164,20 @@ async function handleLeave() {
     return;
   }
   token = null;
+  gameState = { started: null, winner: null, turn: null, board: Array(16).fill(null) };
   joinBtn.innerText = 'Join';
   startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 }
+
+// makes player leave the game when the tab is closed/refreshed
+window.addEventListener('beforeunload', () => {
+  if (!token) return;
+  fetch('/leave', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token)
+  });
+});
 
 
 // // Handles box cell clicks on the board
