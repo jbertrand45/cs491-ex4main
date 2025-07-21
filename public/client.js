@@ -102,12 +102,12 @@ joinBtn.addEventListener('click', async () => {
   }
 });
 
-// // Update player and win messages
-// startBtn.addEventListener('click', async () => {
-//   const res = await fetch('/start', { method: 'POST' });
-//   gameState = await res.json();
-//   renderBoard();
-// });
+ // Update player and win messages
+ startBtn.addEventListener('click', async () => {
+   const res = await fetch('/start', { method: 'POST' });
+   gameState = await res.json();
+   renderBoard();
+ });
 
 // Update messages based on game state to flip coin
 flipBtn.addEventListener('click', async () => {
@@ -125,35 +125,45 @@ flipBtn.addEventListener('click', async () => {
   alert(res.message);
 });
 
-// // Forfeit button to end the game
-// forfeitBtn.addEventListener('click', async () => {
-//   const res = await fetch('/forfeit', {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({ token })
-//   });
-//   gameState = await res.json();
-//   alert(`You forfeited. Winner is ${gameState.winner}`);
-//   renderBoard();
-// });
+// Forfeit button to end the game
+ forfeitBtn.addEventListener('click', async () => {
+   const res = await fetch('/forfeit', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ token })
+   });
+   gameState = await res.json();
+   alert(`You forfeited. Winner is ${gameState.winner}`);
+   renderBoard();
+ });
 
 //join button
 async function handleJoin() {
   let name = prompt("Enter your name to join:");
   if (!name) return alert("Name required.");
+
   try {
     token = setToken(name);
     const res = await postToken(token);
     const names = res.players.map(p => p.user).join(", ");
     alert(res.message + names);
+
     gameState.turn = res.turn; // Set initial turn
     joinBtn.innerText = 'Leave';
-    if (res.players.length === 1) {
+
+    // buttonas are all functioning after players join
+    if (res.players.length === 2) {
+      startBtn.disabled = false;
+      flipBtn.disabled = false;
+      forfeitBtn.disabled = false;
+    } else {
+      // flip button is disabled until both players join
       flipBtn.disabled = false;
     }
-  }
-  catch (error) {
-    return;
+
+  } catch (error) {
+    alert("Error joining game.");
+    console.error(error);
   }
 }
 
