@@ -11,9 +11,7 @@ function createCellButton(index, moveHandler) {
   applyTextFormat(tooltip);
   button.appendChild(tooltip);
 
-  button.onclick = () => {
-    moveHandler(this);
-  };
+  button.onclick = moveHandler;
 
   return button;
 }
@@ -29,8 +27,9 @@ function addHover(btn) {
 }
 
 function changeTooltipText(btn, text) {
-  const tooltip = btn.querySelector("div");
-  tooltip.innerText = text;
+  const tip = btn.querySelector("div");
+  tip.innerText = text;
+  tip.style.visibility = "visible";
 }
 
 function showTooltip() {
@@ -44,4 +43,16 @@ function hideTooltip() {
   tip.style.visibility = "hidden";
 }
 
-export { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText };
+function disableGrid(grid) {
+  grid.querySelectorAll('.cell').forEach(btn => {
+    btn.disabled = true;
+  });
+}
+
+function enableGrid(grid) {
+  grid.querySelectorAll('.cell').forEach(btn => {
+    btn.disabled = false;
+  });
+}
+
+export { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid };
