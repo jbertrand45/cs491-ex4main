@@ -42,16 +42,29 @@ async function postToken(token) {
   return res;
 }
 
+async function removeToken(token) {
+  const res = await fetch('/leave', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token)
+  });
+  if (!res.ok) {
+    alert("Failed to leave: " + (await res.text()));
+    return false;
+  }
+  return true;
+}
+
 //Reads JSON file on the server, returns a JS token to the client
 async function getToken() {
   const res = await fetch('/token', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   });
-  if (!response.ok) {
+  if (!res.ok) {
     throw new Error('Failed to fetch token');
   }
   return await response.json();
 }
 
-export { tokenState, setToken, postToken, getToken };
+export { tokenState, setToken, postToken, removeToken, getToken };
