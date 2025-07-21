@@ -1,18 +1,22 @@
 import { applyButtonFormat, applyTextFormat } from './format.js';
 import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText } from './button.js';
-import { tokenState, setToken, putToken, getToken } from './TokenState.js';
+import { setToken, postToken, getToken } from './states.js';
 
 const grid = document.getElementById('grid');
-const joinBtn = document.getElementById('joinBtn');
-const startBtn = document.getElementById('startBtn');
-const forfeitBtn = document.getElementById('forfeitBtn');
-const flipBtn = document.getElementById('flipBtn');
+const joinBtn = document.getElementById('join-btn');
+const startBtn = document.getElementById('start-btn');
+const forfeitBtn = document.getElementById('forfeit-btn');
+const flipBtn = document.getElementById('flip-btn');
 
 startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 
-let turn = null; // Track whose turn it is
-let token = null; // Player's token
-let board = Array(16).fill(null); // 4x4 board initialized to null
+let token = null; // token for checking player status
+let gameState = { // state to store game info
+  started: null, // null means not joined, false means not started, true means started
+  board: Array(16).fill(null), // 4x4 board initialized to null
+  winner: null, // Track the winner, once winner is set, game is over
+  turn: null
+};
 
 const winPos = [
   // Horizontal
@@ -43,20 +47,36 @@ function renderBoard() {
     const button = createCellButton(i, handleCellClick);
     grid.appendChild(button);
   }
+  const btnRow = document.getElementById('btn-row');
+  btnRow.style.width = `${grid.offsetWidth}px`;
+  btnRow.style.gap = ((grid.offsetWidth - (60 * 4))/3) + 'px'; // Adjust gap based on grid width
+  const sidetext = document.getElementById('player-msg');
+  sidetext.style.width = `${grid.offsetWidth - 4}px`; // Adjust side text width based on grid width
 }
 
 //TODO: add token sending
 function handleCellClick(btn) {
   const index = parseInt(btn.id.slice(-1));
-  if (board[index] === null)
-  {
+  if (board[index] === null) {
     board[index] = turn ? 'x' : 'o'; // Set the player's mark
     turn ? changeTooltipText(btn, 'x') : changeTooltipText(btn, 'o');
   }
 }
 
 //TODO: refactor to not use UI checking
-joinBtn.onclick = async () => {
+joinBtn.addEventListener('click', async () => {
+  handleJoin();
+});
+
+async function handleJoin() {
+  let name = prompt("Enter your name to join:");
+  if (!name) return alert("Name required.");
+  token = setToken(name);
+  const btntest = document.getElementById('join-btn');
+  btntest.innerHTML = 'Leave';
+  postToken(token);
+}
+
 
 // // Handles box cell clicks on the board
 // async function handleCellClick(index) {
