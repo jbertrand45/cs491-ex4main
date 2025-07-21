@@ -1,0 +1,57 @@
+//TokenState class 
+class tokenState {
+  constructor(user, agent) {
+    this.user = user;
+    this.agent = agent;
+    //this.lastActive = Date.now(); // Track last active time
+  }
+}
+
+class gameState {
+  constructor(board, started, winner, turn, coinFlipped) {
+    this.board = board; 
+    this.started = started; // Boolean indicating if the game has started
+    this.winner = winner; // Player who won, null if no winner
+    this.turn = turn; // Player whose turn it is, null if not set
+    this.coinFlipped = coinFlipped; // Boolean indicating if the coin has been flipped
+  }
+}
+
+//creates a JS object
+function setToken(user) {
+  const a = navigator.userAgent; // browser name string
+  var agent = "Firefox"; // the default, ff order is important
+  if (a.indexOf("OPR") > 0) var agent = "Opera";
+  else if (a.indexOf("Chrome") > 0) var agent = "Chrome";
+  else if (a.indexOf("Safari") > 0) var agent = "Safari";
+  return new tokenState(user, agent);
+}
+
+//writes a token from Client to Server
+async function postToken(token) {
+  const req = await fetch('/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token)
+  });
+  const res = await req.json();
+  if (!req.ok) {
+    alert("Failed to post token: " + res.message);
+    throw new Error("Failed to post token");
+  }
+  return res;
+}
+
+//Reads JSON file on the server, returns a JS token to the client
+async function getToken() {
+  const res = await fetch('/token', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch token');
+  }
+  return await response.json();
+}
+
+export { tokenState, setToken, postToken, getToken };
