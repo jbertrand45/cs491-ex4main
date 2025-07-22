@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
 
 app.post('/token', (req, res) => {
   const player = req.body;
-  if ((!tokens.players.some(p => p.user === player.user && p.browser === player.browser))) {
+  if ((!tokens.players.some(p => p.user === player.user))) {
     if (tokens.players.length < 2) {
       tokens.players.push(player);
     }
@@ -68,26 +68,29 @@ app.post('/leave', (req, res) => {
   res.status(200).json({ message: "Left", players: tokens.players });
 });
 
+// Coin flip to decide turn
+app.post('/flip', (req, res) => {
 
-app.get('/token', (req, res) => {
-  res.json(tokens);
-});
-
-app.get('/state', (req, res) => {
-  res.json(gameState);
-});
-
-app.post('/move', (req, res) => {
-  const {index} = req.body;
-  if (gameState.board[index] !== null) {
-    return res.status(400).json({ message: "Invalid move" });
+  // first player gets to choose heads or tails
+  const { input } = req.body;
+  const flipResult = Math.floor(Math.random() * 2) === 0 ? 'H' : 'T';
+  if (input === flipResult) {
+    gameState.turn = true;
   }
   else {
-    gameState.board[index] = gameState.turn ? 'x' : 'o'; // Set the player's mark
-    gameState.turn = !gameState.turn;
+    gameState.turn = false;
   }
-  io.emit('gameState', gameState);
-  return res.status(200).json({ board: gameState.board, turn: gameState.turn });
+  const first = gameState.turn ? tokens.players[0].user : tokens.players[1].user;
+  console.log(`Coin flipped: ${flipResult}. ${first} goes first.`);
+  for (let i = 0; i < tokens.players.length; i++) {
+    // letting websockets handle communication between server and clients
+    io.to(tokens.players[i].socketId).emit('flipResult', {
+      message: `${tokens.players[0].user} chose ${input}, the coin flipped ${flipResult}, ${first} wins the first turn!`,
+      turn: gameState.turn,
+      order: first
+    });
+  }
+  res.status(200).json({ message: `Coin flipped ${flipResult}.` });
 });
 
 // starting game
@@ -109,21 +112,17 @@ app.post('/start', (req, res) => {
   res.status(200).json(gameState);
 });
 
-// Coin flip to decide turn
-app.post('/flip', (req, res) => {
-
-  // first player gets to choose heads or tails
-  const {input} = req.body;
-  const flipResult = Math.floor(Math.random() * 2) === 0 ? 'H' : 'T';
-  if (input === flipResult) {
-    gameState.turn = true;
+app.post('/move', (req, res) => {
+  const { index } = req.body;
+  if (gameState.board[index] !== null) {
+    return res.status(400).json({ message: "Invalid move" });
   }
   else {
-    gameState.turn = false;
+    gameState.board[index] = gameState.turn ? 'x' : 'o'; // Set the player's mark
+    gameState.turn = !gameState.turn;
   }
-  const first = gameState.turn ? tokens.players[0].user : tokens.players[1].user;
-  console.log(`Coin flipped: ${flipResult}. ${first} goes first.`);
-  res.status(200).json({ message: `${first} goes first!`, turn: gameState.turn });
+  io.emit('gameState', gameState);
+  return res.status(200).json({ board: gameState.board, turn: gameState.turn });
 });
 
 // Forfeiting the game
@@ -148,6 +147,14 @@ app.post('/forfeit', (req, res) => {
 
   console.log(`${token.user} forfeited. Winner: ${gameState.winner || "None"}`);
   res.status(200).json(gameState);
+});
+
+app.get('/token', (req, res) => {
+  res.json(tokens);
+});
+
+app.get('/state', (req, res) => {
+  res.json(gameState);
 });
 
 server.listen(port, () => {
