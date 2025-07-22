@@ -1,8 +1,9 @@
 //TokenState class 
 class tokenState {
-  constructor(user, agent) {
+  constructor(user, agent, socketId) {
     this.user = user;
     this.agent = agent;
+    this.socketId = socketId; // Store socket ID
     //this.lastActive = Date.now(); // Track last active time
   }
 }
@@ -18,14 +19,15 @@ class gameState {
 }
 
 //creates a JS object
-function setToken(user) {
+function setToken(user, socketId) {
   const a = navigator.userAgent; // browser name string
   var agent = "Firefox"; // the default, ff order is important
   if (a.indexOf("OPR") > 0) var agent = "Opera";
   else if (a.indexOf("Chrome") > 0) var agent = "Chrome";
   else if (a.indexOf("Safari") > 0) var agent = "Safari";
-  return new tokenState(user, agent);
+  return new tokenState(user, agent, socketId);
 }
+
 
 //writes a token from Client to Server
 async function postToken(token) {
