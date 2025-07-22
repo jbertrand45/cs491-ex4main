@@ -15,6 +15,7 @@ const winMsg = document.getElementById('win-msg');
 startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 
 let token = null; // token for checking player status
+let socketId = null;
 let gameState = { // state to store game info
   started: null, // null means not joined, false means not started, true means started
   winner: null, // Track the winner, once winner is set, game is over
@@ -60,9 +61,18 @@ function renderBoard() {
   winMsg.style.width = playerMsg.style.width; // Match win message width to player message
 }
 
+// to refresh the grid every time someone makes a move to all users of the website, including people who haven't joined the game
 socket.on('gameState', newState => {
+  if (token) {
+    enableGrid(grid);
+  }
   gameState = newState;
   refreshBoard();
+});
+
+socket.on('connect', () => {
+  console.log('Connected to server with socket ID:', socket.id);
+  socketId = socket.id;
 });
 
 function refreshBoard() {
@@ -93,7 +103,13 @@ async function handleCellClick(event) {
   // refreshBoard();
 }
 
-//TODO: not use UI checking
+/**
+ * These functions are ordered in how I want the buttons to be pressed in order.
+ * 1. Join (only first two users)
+ * 2. Flip (only for the first user)
+ * 3. Start (only for the user who won the coin toss)
+ * 4. Forfeit (for all players after the game starts)
+ */
 joinBtn.addEventListener('click', async () => {
   if (joinBtn.innerText === 'Join') {
     await handleJoin();
@@ -101,13 +117,6 @@ joinBtn.addEventListener('click', async () => {
     await handleLeave();
   }
 });
-
- // Update player and win messages
- startBtn.addEventListener('click', async () => {
-   const res = await fetch('/start', { method: 'POST' });
-   gameState = await res.json();
-   renderBoard();
- });
 
 // Update messages based on game state to flip coin
 flipBtn.addEventListener('click', async () => {
@@ -122,20 +131,37 @@ flipBtn.addEventListener('click', async () => {
     body: JSON.stringify({ input: input })
   });
   const res = await req.json();
-  alert(res.message);
+});
+
+// Handle coin flip result
+// Helper function for flipBtn
+socket.on('flipResult', (data) => {
+  gameState.turn = data.turn; // Update turn based on flip result
+  if (token.user === data.order) {
+    startBtn.disabled = false;
+  }
+  flipBtn.disabled = true;
+  playerMsg.innerText = data.message;
+});
+
+// Update player and win messages
+startBtn.addEventListener('click', async () => {
+  const res = await fetch('/start', { method: 'POST' });
+  gameState = await res.json();
+  renderBoard();
 });
 
 // Forfeit button to end the game
- forfeitBtn.addEventListener('click', async () => {
-   const res = await fetch('/forfeit', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ token })
-   });
-   gameState = await res.json();
-   alert(`You forfeited. Winner is ${gameState.winner}`);
-   renderBoard();
- });
+forfeitBtn.addEventListener('click', async () => {
+  const res = await fetch('/forfeit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  });
+  gameState = await res.json();
+  alert(`You forfeited. Winner is ${gameState.winner}`);
+  renderBoard();
+});
 
 //join button
 async function handleJoin() {
@@ -143,7 +169,7 @@ async function handleJoin() {
   if (!name) return alert("Name required.");
 
   try {
-    token = setToken(name);
+    token = setToken(name, socketId);
     const res = await postToken(token);
     const names = res.players.map(p => p.user).join(", ");
     alert(res.message + names);
@@ -152,17 +178,10 @@ async function handleJoin() {
     joinBtn.innerText = 'Leave';
 
     // buttonas are all functioning after players join
-    if (res.players.length === 2) {
-      startBtn.disabled = false;
-      flipBtn.disabled = false;
-      forfeitBtn.disabled = false;
-    } else {
-      // flip button is disabled until both players join
+    if (res.players.length === 1) {
       flipBtn.disabled = false;
     }
-
   } catch (error) {
-    alert("Error joining game.");
     console.error(error);
   }
 }
