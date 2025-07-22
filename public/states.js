@@ -59,14 +59,15 @@ async function removeToken(token) {
 
 //Reads JSON file on the server, returns a JS token to the client
 async function getToken() {
-  const res = await fetch('/token', {
+  const req = await fetch('/token', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   });
+  const res = await req.json();
   if (!res.ok) {
     throw new Error('Failed to fetch token');
   }
-  return await response.json();
+  return await res.json();
 }
 
 async function updateBoard(index) {
