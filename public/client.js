@@ -77,17 +77,14 @@ socket.on('connect', () => {
 
 function refreshBoard() {
   const buttons = document.querySelectorAll('.cell');
+  buttons.forEach((btn, index) => {
+      changeTooltipText(btn, gameState.board[index]);
+    });
   if (token) {
     enableGrid(grid);
-    buttons.forEach((btn, index) => {
-      changeTooltipText(btn, gameState.board[index] || '');
-    });
   }
   else {
     disableGrid(grid);
-    buttons.forEach((btn, index) => {
-      changeTooltipText(btn, gameState.board[index] || '');
-    });
   }
 }
 
@@ -100,7 +97,7 @@ async function handleCellClick(event) {
   gameState.board = res.board;
   gameState.turn = res.turn;
   disableGrid(grid);
-  // refreshBoard();
+  //refreshBoard();
 }
 
 /**
@@ -128,7 +125,7 @@ flipBtn.addEventListener('click', async () => {
   const req = await fetch('/flip', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input: input })
+    body: JSON.stringify({ input: input.toUpperCase() })
   });
   const res = await req.json();
 });
@@ -137,29 +134,38 @@ flipBtn.addEventListener('click', async () => {
 // Helper function for flipBtn
 socket.on('flipResult', (data) => {
   gameState.turn = data.turn; // Update turn based on flip result
-  if (token.user === data.order) {
-    startBtn.disabled = false;
-  }
-  flipBtn.disabled = true;
   playerMsg.innerText = data.message;
+  if (token) {
+    if (token.user === data.order) {
+      startBtn.disabled = false;
+    }
+    flipBtn.disabled = true;
+  }
 });
 
 // Update player and win messages
 startBtn.addEventListener('click', async () => {
-  const res = await fetch('/start', { method: 'POST' });
-  gameState = await res.json();
-  renderBoard();
+  const req = await fetch('/start', {
+    method: 'POST'
+    // headers: { 'Content-Type': 'application/json' },
+    // body: JSON.stringify()
+  });
+  startBtn.disabled = true;
+  forfeitBtn.disabled = false;
+  refreshBoard();
 });
 
 // Forfeit button to end the game
 forfeitBtn.addEventListener('click', async () => {
-  const res = await fetch('/forfeit', {
+  const req = await fetch('/forfeit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token })
+    body: JSON.stringify(token)
   });
-  gameState = await res.json();
-  alert(`You forfeited. Winner is ${gameState.winner}`);
+  const res = await req.json();
+  gameState = res.gameState;
+
+  alert(res.message);
   renderBoard();
 });
 
@@ -207,159 +213,3 @@ window.addEventListener('beforeunload', () => {
     body: JSON.stringify(token)
   });
 });
-
-
-// // Handles box cell clicks on the board
-// async function handleCellClick(index) {
-//   if (!gameState.started || gameState.board[index] !== "" || gameState.winner) return;
-//   const res = await fetch("/move", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ index })
-//   });
-//   const newState = await res.json();
-//   gameState = newState;
-//   renderBoard();
-//   updateButton();
-// }
-
-// // Action button to handle flip, clear, and start tasks
-// actionBtn.onclick = async () => {
-//   let route = "";
-//   if (!gameState.coinFlipped) route = "flip";
-//   else if (gameState.winner || gameState.board.some(c => c)) route = "clear";
-//   else route = "start";
-
-//   //post request to a dynamic route
-//   const res = await fetch("/" + route, { method: "POST" });
-//   const newState = await res.json();
-//   gameState = newState;
-//   renderBoard();
-//   updateButton();
-// };
-
-// // Updates the action button based on the state of the game
-// function updateButton() {
-//   if (!gameState.coinFlipped) actionBtn.innerText = "Flip";
-//   else if (gameState.winner || gameState.board.some(c => c)) actionBtn.innerText = "Clear";
-//   else actionBtn.innerText = "Start";
-// }
-
-// // Loading intial state of the game from the server
-// async function loadState() {
-//   const res = await fetch("/state");
-//   gameState = await res.json();
-//   renderBoard();
-//   updateButton();
-// }
-
-// loadState();
-
-// import { tokenState, setToken, putToken, getToken } from './TokenState.js';
-/*import { tokenState, setToken, putToken, getToken } from './TokenState.js';
-
-// //initializing the variable to hold the user's token
-// const pingBtn = document.getElementById('pingButton');
-// pingBtn.disabled = true;
-// const joinBtn = document.getElementById('joinButton');
-// let token = null;
-
-// //join button on click for user
-// joinBtn.onclick = async () => {
-//   if (joinBtn.innerText[0] === 'J') {
-//     //join logic for the user
-//     const name = prompt("Enter your name to join:");
-//     //if user cancels the prompt, name equals null
-//     if (!name) return alert("Name required.");
-//     //creates token with a username
-//     token = setToken(name);
-//     //sends token to the server to join the ping game
-//     const res = await fetch('/join', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(token)
-//     })
-//     //parses the json response on the server
-//     const data = await res.json();
-
-//     //if response is ok, server accepts the user
-//     if (!res.ok) {
-//       alert(data.message || "Room Full");
-//       return;
-//     }
-//     alert("Joined. Players: " + data.players.map(p => p.user).join(", "));
-//     joinBtn.innerText = 'Leave';
-//     pingBtn.disabled = false;
-//   }
-//   else {
-//     //sends a network request to server to exit the game
-//     const res = await fetch('/leave', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(token)
-//     });
-
-//     //goes back to initial state
-//     token = null;
-//     pingBtn.disabled = true;
-//     joinBtn.innerText = 'Join';
-//   }
-// };
-
-// //pingButton on Click
-// pingBtn.onclick = async () => {
-//   pingBtn.disabled = true;
-
-//   //sending token to server
-//   const complete = await putToken(token);
-//   if (!complete) {
-//     alert("Failed to send token");
-//     pingBtn.disabled = false;
-//     return;
-
-//   }
-//   //polls the server for other player's ping
-//   const poll = setInterval(async () => {
-//     const serverToken = await getToken();
-//     if (!serverToken) return;
-
-//     //checks if the token matches the other player's token and outputs it's your turn notification
-//     if (serverToken.user === token.user && serverToken.browser === token.browser) {
-//       alert("It's your turn");
-//       console.log("It's your turn");
-//       pingBtn.disabled = false;
-//       clearInterval(poll);
-//     }
-//   }, 1000);
-// };
-// //function for sending client a heartbeat data to the server
-// function sendActivity() {
-//   if (token) {
-//     fetch('/activity', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(token)
-//     });
-//   }
-// }
-
-// // Notify server when tab closes
-// window.addEventListener('beforeunload', () => {
-//   if (!token) return;
-//   fetch('/leave', {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify(token)
-//   });
-// });
-
-// Periodically send activity
-setInterval(sendActivity, 3000);
-
-//
-*/
-
-// const boardEl = document.getElementById("board");
-// const actionBtn = document.getElementById("actionButton");
-
-// let gameState = null;
