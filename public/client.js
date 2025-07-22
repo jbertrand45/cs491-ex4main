@@ -23,24 +23,6 @@ let gameState = { // state to store game info
   board: Array(16).fill(null) // 4x4 board initialized to null
 };
 
-const winPos = [
-  // Horizontal
-  [0, 1, 2, 3],
-  [4, 5, 6, 7],
-  [8, 9, 10, 11],
-  [12, 13, 14, 15],
-
-  // Vertical
-  [0, 4, 8, 12],
-  [1, 5, 9, 13],
-  [2, 6, 10, 14],
-  [3, 7, 11, 15],
-
-  // Diagonal
-  [0, 5, 10, 15],
-  [3, 6, 9, 12]
-];
-
 renderBoard();
 
 // Rendering game board
@@ -59,20 +41,45 @@ function renderBoard() {
   playerMsg.style.width = `${grid.offsetWidth - 4}px`; // Adjust side text width based on grid width
   playerMsg.innerText = winMsg.innerText = "No game started";
   winMsg.style.width = playerMsg.style.width; // Match win message width to player message
+  resetVars();
 }
 
 // to refresh the grid every time someone makes a move to all users of the website, including people who haven't joined the game
+//NOT FUNCTIONAL ATM
 socket.on('gameState', newState => {
   if (token) {
     enableGrid(grid);
   }
   gameState = newState;
+  if (msg[0] === 'W') {
+    winMsg.innerText = msg;
+  }
+  else
+  {
+    playerMsg.innerText = msg;
+  }
   refreshBoard();
+});
+
+//TODO not finished
+socket.on('win', message => {
+  winMsg.innerText = message;
+  disableGrid(grid);
+  setTimeout(() => {
+    joinBtn.innerText = "Join";
+    startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
+    renderBoard();
+    disableGrid(grid);
+  }, 10000);
 });
 
 socket.on('connect', () => {
   console.log('Connected to server with socket ID:', socket.id);
   socketId = socket.id;
+});
+
+socket.on('start', msg => {
+  winMsg.innerText = message;
 });
 
 function refreshBoard() {
@@ -97,7 +104,7 @@ async function handleCellClick(event) {
   gameState.board = res.board;
   gameState.turn = res.turn;
   disableGrid(grid);
-  //refreshBoard();
+  //refreshBoard(); // maybe not required because click event already changes tooltip
 }
 
 /**
@@ -163,10 +170,6 @@ forfeitBtn.addEventListener('click', async () => {
     body: JSON.stringify(token)
   });
   const res = await req.json();
-  gameState = res.gameState;
-
-  alert(res.message);
-  renderBoard();
 });
 
 //join button
@@ -183,8 +186,7 @@ async function handleJoin() {
     gameState.turn = res.turn; // Set initial turn
     joinBtn.innerText = 'Leave';
 
-    // buttonas are all functioning after players join
-    if (res.players.length === 1) {
+    if (res.players.length === 2) {
       flipBtn.disabled = false;
     }
   } catch (error) {
@@ -202,6 +204,17 @@ async function handleLeave() {
   gameState = { started: null, winner: null, turn: null, board: Array(16).fill(null) };
   joinBtn.innerText = 'Join';
   startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
+}
+
+// helper var
+function resetVars() {
+  gameState = {
+    turn: null,
+    started: null, // null means not joined, false means not started, true means started
+    winner: null, // Track the winner, once winner is set, game is over
+    board: Array(16).fill(null) // 4x4 board initialized to null
+  };
+  token = null;
 }
 
 // makes player leave the game when the tab is closed/refreshed
