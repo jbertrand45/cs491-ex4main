@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
-const port = 3000;
+const port = 3001;
 
 app.use(express.static('public'));
 app.use(express.json());
