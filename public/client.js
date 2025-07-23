@@ -4,6 +4,8 @@ import { setToken, postToken, removeToken, getToken, updateBoard } from './state
 
 const socket = io();
 
+//TODO: add hover event, reduce redundancy
+
 const grid = document.getElementById('grid');
 const joinBtn = document.getElementById('join-btn');
 const startBtn = document.getElementById('start-btn');
