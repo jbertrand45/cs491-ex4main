@@ -1,6 +1,6 @@
 import { applyButtonFormat, applyTextFormat } from './format.js';
 import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid, enablePartialGrid } from './button.js';
-import { setToken, postToken, removeToken, getToken, updateBoard } from './states.js';
+import { setToken, postToken, removeToken, getToken, changeToken, updateBoard } from './states.js';
 
 const socket = io();
 
@@ -48,7 +48,6 @@ function renderBoard() {
 
 // to refresh the grid every time someone makes a move to all users of the website, including people who haven't joined the game
 socket.on('gameState', (newState, msg) => {
-  console.log(gameState);
   console.log(msg);
   gameState = newState;
   if (msg[0] === 'W') {
@@ -68,7 +67,7 @@ socket.on('gameState', (newState, msg) => {
 socket.on('win', message => {
   winMsg.innerText = message;
   startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = joinBtn.disabled = true;
-  const nums = message.match(/\d+/g)
+  let nums = message.match(/\d+/g)
   if (nums) {
     nums = nums.map(n => Number(n) - 1);
     for (let i = 0; i < 4; i++) {
@@ -82,6 +81,7 @@ socket.on('win', message => {
     joinBtn.disabled = false;
     startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
     renderBoard();
+    resetVars();
     disableGrid(grid);
   }, 10000);
 });
@@ -102,7 +102,7 @@ function refreshBoard() {
 async function handleCellClick(event) {
   const btn = event.currentTarget;
   const index = parseInt(btn.id.slice(3));
-  gameState.turn ? changeTooltipText(btn, 'x') : changeTooltipText(btn, 'o');
+  changeTooltipText(btn, gameState.turn);
   const res = await updateBoard(index);
   gameState.board = res.board;
   gameState.turn = res.turn;
@@ -143,10 +143,11 @@ flipBtn.addEventListener('click', async () => {
 // Handle coin flip result
 // Helper function for flipBtn
 socket.on('flipResult', (data) => {
-  gameState.turn = data.turn; // Update turn based on flip result
+  token.role = data.turn === token.user ? 'x' : 'o';
+  changeToken(token)
   playerMsg.innerText = data.message;
   if (token) {
-    if (token.user === data.order) {
+    if (token.role === 'x') {
       startBtn.disabled = false;
     }
     flipBtn.disabled = true;
@@ -181,14 +182,11 @@ async function handleJoin() {
   if (!name) return alert("Name required.");
 
   try {
-    token = setToken(name, socketId);
+    token = setToken(name, socketId, null);
     const res = await postToken(token);
     const names = res.players.map(p => p.user).join(", ");
     alert(res.message + names);
-
-    gameState.turn = res.turn; // Set initial turn
     joinBtn.innerText = 'Leave';
-
     if (res.players.length === 2) {
       flipBtn.disabled = false;
     }
@@ -203,8 +201,7 @@ async function handleLeave() {
     alert("Failed to leave the game");
     return;
   }
-  token = null;
-  gameState = { started: null, winner: null, turn: null, board: Array(16).fill(null) };
+  resetVars();
   joinBtn.innerText = 'Join';
   startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
 }
