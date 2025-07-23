@@ -1,5 +1,5 @@
 import { applyButtonFormat, applyTextFormat } from './format.js';
-import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid } from './button.js';
+import { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid, enablePartialGrid } from './button.js';
 import { setToken, postToken, removeToken, getToken, updateBoard } from './states.js';
 
 const socket = io();
@@ -39,34 +39,45 @@ function renderBoard() {
   btnRow.style.gap = ((grid.offsetWidth - (60 * 4)) / 3) + 'px'; // Adjust gap based on grid width
 
   playerMsg.style.width = `${grid.offsetWidth - 4}px`; // Adjust side text width based on grid width
-  playerMsg.innerText = winMsg.innerText = "No game started";
+  playerMsg.innerText = winMsg.innerText = "...";
   winMsg.style.width = playerMsg.style.width; // Match win message width to player message
   resetVars();
 }
 
 // to refresh the grid every time someone makes a move to all users of the website, including people who haven't joined the game
-//NOT FUNCTIONAL ATM
-socket.on('gameState', newState => {
-  if (token) {
-    enableGrid(grid);
-  }
+socket.on('gameState', (newState, msg) => {
+  console.log(gameState);
+  console.log(msg);
   gameState = newState;
   if (msg[0] === 'W') {
     winMsg.innerText = msg;
   }
-  else
-  {
+  else {
     playerMsg.innerText = msg;
   }
   refreshBoard();
+  if (token && !gameState.winner) {
+    enablePartialGrid(grid);
+    forfeitBtn.disabled = false;
+  }
 });
 
 //TODO not finished
 socket.on('win', message => {
   winMsg.innerText = message;
+  startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = joinBtn.disabled = true;
+  const nums = message.match(/\d+/g)
+  if (nums) {
+    nums = nums.map(n => Number(n) - 1);
+    for (let i = 0; i < 4; i++) {
+      const btn = document.getElementById(`tic${nums[i]}`);
+      btn.style.backgroundColor = "red";
+    }
+  }
   disableGrid(grid);
   setTimeout(() => {
     joinBtn.innerText = "Join";
+    joinBtn.disabled = false;
     startBtn.disabled = forfeitBtn.disabled = flipBtn.disabled = true;
     renderBoard();
     disableGrid(grid);
@@ -76,26 +87,16 @@ socket.on('win', message => {
 socket.on('connect', () => {
   console.log('Connected to server with socket ID:', socket.id);
   socketId = socket.id;
-});
-
-socket.on('start', msg => {
-  winMsg.innerText = message;
+  disableGrid(grid);
 });
 
 function refreshBoard() {
   const buttons = document.querySelectorAll('.cell');
   buttons.forEach((btn, index) => {
-      changeTooltipText(btn, gameState.board[index]);
-    });
-  if (token) {
-    enableGrid(grid);
-  }
-  else {
-    disableGrid(grid);
-  }
+    changeTooltipText(btn, gameState.board[index]);
+  });
 }
 
-//TODO: add token sending
 async function handleCellClick(event) {
   const btn = event.currentTarget;
   const index = parseInt(btn.id.slice(3));
@@ -158,7 +159,7 @@ startBtn.addEventListener('click', async () => {
     // body: JSON.stringify()
   });
   startBtn.disabled = true;
-  forfeitBtn.disabled = false;
+  enableGrid(grid);
   refreshBoard();
 });
 
