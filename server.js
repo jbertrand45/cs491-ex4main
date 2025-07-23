@@ -43,7 +43,9 @@ const winPos = [
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id, socket.handshake.address);
-  socket.emit('gameState', gameState);
+  if (gameState.started) {
+    socket.emit('gameState', gameState, "Waiting for a move...");
+  }
 });
 
 app.post('/token', (req, res) => {
@@ -81,6 +83,7 @@ app.post('/leave', (req, res) => {
   gameState.winner = null;
   gameState.board = Array(16).fill(null); // Reset the board
   console.log('Player left:', player);
+  io.emit('gameState', gameState, `Player left: ${player.user}`)
   res.status(200).json({ message: "Left", players: tokens.players });
 });
 
@@ -114,7 +117,7 @@ app.post('/start', (req, res) => {
 
   console.log(`Game started. ${gameState.turn ? tokens.players[0].user : tokens.players[1].user} goes first.`);
   const msg = "Waiting for the game to end..."
-  io.emit('start', msg);
+  // io.emit('gameState', gameState, msg); // important--maybe?
   res.status(200).json({ message: `Game started.` });
 });
 
@@ -124,11 +127,33 @@ app.post('/move', (req, res) => {
     return res.status(400).json({ message: "Invalid move" });
   }
   gameState.board[index] = gameState.turn ? 'x' : 'o'; // Set the player's mark
-  const msg = `Player ${gameState.turn ? tokens.players[0].user : tokens.players[1].user} has placed their ${gameState.board[index]} on ${index}`;
+  //CALCULATIONS FOR GAMESTATE GO HERE
+
+  const msg = `Player ${gameState.turn ? tokens.players[0].user : tokens.players[1].user} has placed their ${gameState.board[index]} on square ${index + 1}`;
   gameState.turn = !gameState.turn;
-  io.emit('gameState', gameState);
-  return res.status(200).json({ board: gameState.board, turn: gameState.turn });
+  io.emit('gameState', gameState, msg); // important
+  res.status(200).json({ board: gameState.board, turn: gameState.turn });
+  if (checkWin()) resetVars();
 });
+
+function checkWin() {
+  const player = gameState.turn ? tokens.players[0].user : tokens.players[1].user;
+  for (const pos of winPos) {
+    const [a, b, c, d] = pos;
+    if (gameState.board[a] &&
+        gameState.board[a] === gameState.board[b] &&
+        gameState.board[a] === gameState.board[c] &&
+        gameState.board[a] === gameState.board[d]) {
+          io.emit('win', `${player} wins by connecting ${a+1}, ${b+1}, ${c+1}, ${d+1}!`)
+          return true;
+    }
+  }
+  if (gameState.board.every(cell => cell !== null)) {
+    io.emit('win', `Both players have reached a draw!`);
+    return true;
+  }
+  return false;
+}
 
 // Forfeiting the game
 app.post('/forfeit', (req, res) => {
@@ -142,7 +167,7 @@ app.post('/forfeit', (req, res) => {
   }
 
   //reset the game state
-  const message = `${token.user} has forfeited. ${gameState.winner} is the winner!`;
+  const message = `${token.user} has forfeited. ${gameState.winner} is the winner! Please wait ten seconds for the board to reset.`;
   io.emit('win', message)
   console.log(`${token.user} forfeited. Winner: ${gameState.winner || "None"}`);
   resetVars();
