@@ -49,10 +49,18 @@ function disableGrid(grid) {
   });
 }
 
+function enablePartialGrid(grid) {
+  grid.querySelectorAll('.cell').forEach(btn => {
+    if (btn.querySelector("div").innerText === '') {
+      btn.disabled = false;
+    }
+  });
+}
+
 function enableGrid(grid) {
   grid.querySelectorAll('.cell').forEach(btn => {
     btn.disabled = false;
   });
 }
 
-export { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid };
+export { createCellButton, removeHover, addHover, showTooltip, hideTooltip, changeTooltipText, disableGrid, enableGrid, enablePartialGrid };
