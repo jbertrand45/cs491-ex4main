@@ -106,7 +106,7 @@ app.post('/start', (req, res) => {
   gameState.started = true;
   gameState.board = Array(16).fill(null);
 
-  console.log(`Game started. ${gameState.turn ? tokens.players[0].user : tokens.players[1].user} goes first.`);
+  console.log(`Game started. ${gameState.turn === tokens.players[0].role ? tokens.players[0].user : tokens.players[1].user} goes first.`);
   const msg = "Waiting for the game to end..."
   // io.emit('gameState', gameState, msg); // important--maybe?
   res.status(200).json({ message: `Game started.` });
